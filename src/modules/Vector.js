@@ -15,6 +15,14 @@ export class Vector {
 
     }
 
+    getX() {
+        return this.x;
+    }
+
+    getY() {
+        return this.y;
+    }
+
     setX( x = this.x ) {
 
         this.x = x;

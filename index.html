@@ -3,12 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <title>snake | Pro-ing</title>
+    <link rel="stylesheet" href="static/css/index.css">
 </head>
 <body>
+
+
 <script type="module">
+import {SnakeGame} from "./src";
 
+const snakeGame = new SnakeGame( document.body );
+snakeGame.setUnitTileSize( new SnakeGame.Vector( 100, 100 ) );
+window.addEventListener("resize", () => {
+   snakeGame.resize();
+});
 
-
+window.snakeGame = snakeGame;
 </script>
 </body>
 </html>

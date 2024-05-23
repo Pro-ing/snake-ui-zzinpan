@@ -1,6 +1,6 @@
 import {Vector} from "./Vector";
 
-export const EDirection = Object.create(Object.prototype, {
+export const Direction = Object.create(Object.prototype, {
 
     TOP: {
 
