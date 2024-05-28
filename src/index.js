@@ -63,7 +63,7 @@ export class SnakeGame {
 
     unitTileSize;
     tileCount;
-    tiles
+    tiles;
 
     imageSources = {
         snake: {
@@ -97,6 +97,7 @@ export class SnakeGame {
         this.imageSources.snake.walk.set( SnakeEngine.Direction.LEFT, characterImageSource.left.walk );
 
 
+        this.tiles = [];
         this.setUnitTileSize( constant.unitTileSize );
         this.resize();
 
@@ -124,9 +125,9 @@ export class SnakeGame {
                 this.htmlElement.viewer.removeChild( tile );
             });
 
-            const snake = this.engine.getSnakeHead();
-            const walkImageSources = this.imageSources.snake.walk.get( snake.head.direction );
-            const walkImageSourceIndex = snake.head.position[ snake.head.direction.axis ] % 2;
+            const snakeHead = this.engine.getSnake()[0];
+            const walkImageSources = this.imageSources.snake.walk.get( snakeHead.direction );
+            const walkImageSourceIndex = snake.head.position[ snakeHead.direction.axis ] % 2;
             const walkImageSource = walkImageSources[ walkImageSourceIndex ];
 
 
