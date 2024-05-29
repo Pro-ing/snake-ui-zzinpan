@@ -1,4 +1,4 @@
-import {Vector} from "./Vector";
+import {Vector} from "./Vector.js";
 
 export const TOP = new Vector( 0, 1 );
 export const RIGHT = new Vector( 1, 0 );

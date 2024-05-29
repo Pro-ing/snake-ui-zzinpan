@@ -53,6 +53,10 @@ export class Vector {
 
     }
 
+    clone() {
+        return new Vector( this.getX(), this.getY() );
+    }
+
     equals( vector ) {
 
         if( vector.getX() !== this.getX() ) {

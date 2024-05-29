@@ -23,7 +23,7 @@ export class EventManager {
     dispatch( ...args ) {
 
         const key = args.shift();
-        const eventListeners = map.get( key );
+        const eventListeners = this.map.get( key );
         if( !eventListeners ) {
             return;
         }

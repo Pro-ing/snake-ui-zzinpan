@@ -1,5 +1,5 @@
-import {Direction} from "../Direction";
-import {Vector} from "../Vector";
+import * as Direction from "../Direction.js";
+import {Vector} from "../Vector.js";
 
 export class Asset {
 
@@ -45,7 +45,7 @@ export class Asset {
     getData() {
 
         return this.data;
-        
+
     }
 
 }
