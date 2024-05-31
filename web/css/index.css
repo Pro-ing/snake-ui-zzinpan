@@ -1,6 +1,8 @@
 body {
     padding: 0;
     margin: 0;
+}
+.viewer {
     background-color: black;
     position: fixed;
     left: 0;

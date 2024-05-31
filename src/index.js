@@ -6,8 +6,8 @@ import {EventManager} from "./modules/EventManager.js";
 export class SnakeEngine {
 
     static Vector = Vector;
-
     static Direction = Direction;
+    static EventManager = EventManager;
 
     world = {
         size: new Vector(11, 11),
@@ -94,6 +94,12 @@ export class SnakeEngine {
             nextHeadPosition.add( head.getDirection() );
             nextHeadPosition.multiplyScalar( movePx );
 
+            if( this.isOutOfWorld( nextHeadPosition ) ){
+                cancelAnimationFrame( this.raf.id );
+                this.eventManager.dispatch( "gameover" );
+                return;
+            }
+
             const asset = this.getByPosition( nextHeadPosition );
 
             // asset === 빈 공간 : 이동
@@ -134,6 +140,30 @@ export class SnakeEngine {
 
         this.raf.time = Date.now();
         this.raf.id = requestAnimationFrame(frame);
+
+    }
+
+    isOutOfWorld( vector ) {
+
+        const x = vector.getX();
+        if( x < 0 ){
+            return true;
+        }
+
+        if( this.world.size.getX() <= x ){
+            return true;
+        }
+
+        const y = vector.getY();
+        if( y < 0 ){
+            return true;
+        }
+
+        if( this.world.size.getY() <= y ){
+            return true;
+        }
+
+        return false;
 
     }
 

@@ -52,6 +52,7 @@ export class SnakeGame {
     tileCount;
     tiles;
     mapSize;
+    eventManager;
 
     sprites = {
         snake: {
@@ -59,7 +60,15 @@ export class SnakeGame {
             attack: new Map()
         },
         map: {
-            ground: new Sprite("../web/img/map/ground.png")
+            ground: new Sprite("../web/img/map/ground.png"),
+            land: {
+                center: new Sprite("../web/img/map/land/center.png"),
+                right: new Sprite("../web/img/map/land/right.png"),
+                left: new Sprite("../web/img/map/land/left.png"),
+                top: new Sprite("../web/img/map/land/top.png"),
+                bottom: new Sprite("../web/img/map/land/bottom.png"),
+                bottomWall: new Sprite("../web/img/map/land/bottomWall.png"),
+            }
         }
     };
 
@@ -72,6 +81,14 @@ export class SnakeGame {
     engine;
     updateCounts = 0;
 
+    konva = {
+        stage: null,
+        layer: null,
+        objects: {
+            snake: []
+        }
+    }
+
     constructor( containerHtmlElement ) {
 
         if( !document.head.querySelector("style.snake-game") ){
@@ -79,10 +96,25 @@ export class SnakeGame {
         }
 
         this.htmlElement.container = containerHtmlElement;
-        this.htmlElement.canvas = constant.htmlElement.canvasTemplate.cloneNode( true );
-        this.canvasContext = this.htmlElement.canvas.getContext("2d");
-        this.htmlElement.container.appendChild( this.htmlElement.canvas );
 
+        const boundingClientRect = this.htmlElement.container.getBoundingClientRect();
+
+        this.konva.stage = new Konva.Stage({
+            container: this.htmlElement.container, // 컨테이너 id <div>
+            width: boundingClientRect.width,
+            height: boundingClientRect.height
+        });
+
+        this.konva.stage.scale(-1);
+        this.konva.layer = new Konva.Layer();
+        this.konva.layer.scale(-1);
+        this.konva.stage.add( this.konva.layer );
+
+// 모양 만들기
+
+
+
+        this.konva.layer.draw();
 
         this.tileCount = new SnakeEngine.Vector();
         this.sprites.snake.walk.set( SnakeEngine.Direction.TOP, [ new Sprite("../web/img/character/walk/top/0.png"), new Sprite("../web/img/character/walk/top/1.png") ] );
@@ -91,11 +123,56 @@ export class SnakeGame {
         this.sprites.snake.walk.set( SnakeEngine.Direction.LEFT, [ new Sprite("../web/img/character/walk/left/0.png"), new Sprite("../web/img/character/walk/left/1.png") ] );
 
 
-        this.tiles = [];
         this.setUnitTileSize( constant.unitTileSize );
         this.resize();
-        this.mapSize = new SnakeEngine.Vector(100, 100);
+        this.mapSize = new SnakeEngine.Vector(30, 30);
         this.engine = new SnakeEngine( this.mapSize );
+
+        const unitTileSizeX = this.unitTileSize.getX();
+        const unitTileSizeY = this.unitTileSize.getY();
+
+                for( let x=-this.mapSize.getX(); x<this.mapSize.getX() * 2; ++x ){
+                    for( let y=-this.mapSize.getY(); y<this.mapSize.getY() * 2; ++y ){
+
+                        let image = this.sprites.map.ground;
+                        if( -1 < x &&  x < this.mapSize.getX() && y === -2 ){
+                            image = this.sprites.map.land.bottom;
+                        }
+                        else if( x < -1 || this.mapSize.getX() < x || y < -1 || this.mapSize.getY() < y ){
+                            image = this.sprites.map.land.center;
+                        }
+                        else if( x === -1 && y === this.mapSize.getY() ){
+                            image = this.sprites.map.land.center;
+                        }
+                        else if( x === this.mapSize.getX() && y === this.mapSize.getY() ){
+                            image = this.sprites.map.land.center;
+                        }
+                        else if( x === -1 ){
+                            image = this.sprites.map.land.right;
+                        }
+                        else if( x === this.mapSize.getX() ) {
+                            image = this.sprites.map.land.left;
+                        }
+                        else if( y === -1 ){
+                            image = this.sprites.map.land.bottomWall;
+                        }
+                        else if( y === this.mapSize.getY() ) {
+                            image = this.sprites.map.land.top;
+                        }
+
+                        const bg = new Konva.Image({
+                            x: x * unitTileSizeX,
+                            y: y * unitTileSizeY,
+                            image,
+                            width: unitTileSizeX,
+                            height: unitTileSizeY,
+                        });
+
+                        this.konva.layer.add( bg );
+                    }
+                }
+
+        this.eventManager = new SnakeEngine.EventManager();
 
     }
 
@@ -111,27 +188,50 @@ export class SnakeGame {
 
     render() {
 
-        const snakeHead = this.engine.getSnake()[0];
-        const walkSprites = this.sprites.snake.walk.get( snakeHead.direction );
-        const walkSprite = walkSprites[ this.updateCounts % 2 ];
 
-        const headPosition = snakeHead.getPosition();
-        console.log("update", headPosition);
-        const headDirection = snakeHead.getDirection();
+        const unitTileSizeX = this.unitTileSize.getX();
+        const unitTileSizeY = this.unitTileSize.getY();
+        const snake = this.engine.getSnake();
+        snake.forEach(( snakeBody, index ) => {
 
-        this.canvasContext.save();
-        this.canvasContext.fillStyle = this.canvasContext.createPattern(this.sprites.map.ground, 'repeat');
-        const mapWidth = this.unitTileSize.getX() * this.mapSize.getX();
-        const mapHeight = this.unitTileSize.getY() * this.mapSize.getY();
-        this.canvasContext.scale( -1, 1 );
-        this.canvasContext.translate( this.unitTileSize.getX() * headPosition.getX(), this.unitTileSize.getY() * headPosition.getY() )
-        this.canvasContext.fillRect(-mapWidth, -mapHeight, mapWidth, mapHeight);
-        this.canvasContext.restore();
+            const position = snakeBody.getPosition();
+            const direction = snakeBody.getDirection();
 
-        this.canvasContext.save();
-        this.canvasContext.translate( this.htmlElement.canvas.width / 2 - this.unitTileSize.getX() / 2, this.htmlElement.canvas.height / 2 - this.unitTileSize.getY() / 2 );
-        this.canvasContext.drawImage( walkSprite, 0, 0, this.unitTileSize.getX(), this.unitTileSize.getY() );
-        this.canvasContext.restore();
+            const walkSprites = this.sprites.snake.walk.get( direction );
+            const walkSprite = walkSprites[ ( this.updateCounts + index ) % 2 ];
+            const konvaObject = this.konva.objects.snake[ index ];
+            const x= position.getX() * unitTileSizeX;
+            const y= position.getY() * unitTileSizeY;
+            if( !konvaObject ){
+                const konvaObject = new Konva.Image({
+                    x,
+                    y,
+                    image: walkSprite,
+                    width: unitTileSizeX,
+                    height: unitTileSizeY,
+                });
+                this.konva.layer.add( konvaObject );
+                this.konva.objects.snake.push( konvaObject );
+                konvaObject.show();
+                return;
+            }
+
+            konvaObject.setImage( walkSprite );
+            konvaObject.x( x );
+            konvaObject.y( y );
+            konvaObject.show();
+
+        });
+
+        console.log(snake[0].position);
+        // });
+
+
+        this.konva.stage.position({
+            x: this.konva.stage.width() /2 -snake[0].position.getX() * unitTileSizeX,
+            y: this.konva.stage.height()/2 -snake[0].position.getY() * unitTileSizeY
+        });
+        this.konva.stage.batchDraw();
 
         this.updateCounts += 1;
 
@@ -141,12 +241,21 @@ export class SnakeGame {
 
         this.updateCounts = 0;
         this.engine.snake.speed = 0.0001;
+        // this.engine.snake.speed = 0.001
 
-
+        this.konva.objects.snake.forEach(( snakeBody ) => {
+            snakeBody.hide();
+        });
 
         this.engine.on("update", () => {
 
             this.render();
+
+        });
+
+        this.engine.on("gameover", () => {
+
+            this.eventManager.dispatch("gameover");
 
         });
 
@@ -197,25 +306,14 @@ export class SnakeGame {
     resize() {
 
         const boundingClientRect = this.htmlElement.container.getBoundingClientRect();
-        let viewerWidth = boundingClientRect.width - ( boundingClientRect.width % this.unitTileSize.x ) + this.unitTileSize.x;
-        let viewerHeight = boundingClientRect.height - ( boundingClientRect.height % this.unitTileSize.y ) + this.unitTileSize.y;
+        this.konva.stage.setWidth( boundingClientRect.width );
+        this.konva.stage.setHeight( boundingClientRect.height );
 
-        // 플레이어가 가운데 위치하도록 타일들을 홀수를 만들어준다.
-        if( ( viewerWidth / this.unitTileSize.x ) % 2 === 0 ){
-            viewerWidth += this.unitTileSize.x;
-        }
+    }
 
-        if( ( viewerHeight / this.unitTileSize.y ) % 2 === 0 ){
-            viewerHeight += this.unitTileSize.y;
-        }
+    on( event, callback ) {
 
-        this.tileCount.setX( viewerWidth / this.unitTileSize.x );
-        this.tileCount.setY( viewerHeight / this.unitTileSize.y );
-
-        this.htmlElement.canvas.width = viewerWidth;
-        this.htmlElement.canvas.height = viewerHeight;
-        this.htmlElement.canvas.style.width = `${viewerWidth}px`;
-        this.htmlElement.canvas.style.height = `${viewerHeight}px`;
+        this.eventManager.addEventListener( event, callback );
 
     }
 

@@ -6,10 +6,10 @@
     <link rel="stylesheet" href="css/index.css">
 </head>
 <body>
-
-<!--<button class="start-button">START</button>-->
+<div class="viewer"></div>
 <start-button id="startButton" visible="true"></start-button>
 
+<script src="https://unpkg.com/konva@9/konva.min.js"></script>
 <script type="module">
 import "./js/components/StartButton.js";
 import {SnakeGame} from "./js";
@@ -18,7 +18,11 @@ const element = {
   startButton: document.getElementById("startButton")
 };
 
-const snakeGame = new SnakeGame( document.body );
+
+const snakeGame = new SnakeGame( document.querySelector(".viewer") );
+
+
+
 snakeGame.setUnitTileSize( new SnakeGame.Vector( 100, 100 ) );
 window.addEventListener("resize", () => {
    snakeGame.resize();
@@ -29,6 +33,10 @@ element.startButton.addEventListener("click", () => {
     element.startButton.setAttribute("visible", "false");
     snakeGame.start();
 
+});
+
+snakeGame.on("gameover", () => {
+   // alert(123);
 });
 
 window.snakeGame = snakeGame;
