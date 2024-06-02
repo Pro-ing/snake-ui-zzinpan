@@ -4,7 +4,7 @@ style.innerHTML = `
 .start-button {
     position: fixed;
     left: 50%;
-    top: 50%;
+    top: calc( 50% - 50px );
     transform: translate(-50%, -50%);
     border:  none;
     font-size: 4rem;
@@ -12,21 +12,23 @@ style.innerHTML = `
     background-color: transparent;
     padding: 4px 10px;
     z-index: 10;
-    transition: all 500ms;
+    transition: font-size 500ms, color 500ms, top 500ms, opacity 500ms, text-shadow 500ms;
     text-shadow: white 1px 0 10px;
+    color: #644724;
     opacity: 0;
     pointer-events: none;
 }
 
 .start-button.show {
     opacity: 1;
+    top: 50%;
     pointer-events: auto;
 }
 
 .start-button:hover {
     font-size: 5rem;
     color: white;
-    text-shadow: black 1px 0 10px;
+    text-shadow: #644724 1px 0 10px;
 }
 `;
 

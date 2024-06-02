@@ -6,9 +6,11 @@
     <link rel="stylesheet" href="css/index.css">
 </head>
 <body>
-<div class="viewer"></div>
+<div id="viewer" class="viewer"></div>
 <start-button id="startButton" visible="true"></start-button>
-
+<div id="minimap" class="minimap">
+    <div class="viewer"></div>
+</div>
 <script src="https://unpkg.com/konva@9/konva.min.js"></script>
 <script type="module">
 import "./js/components/StartButton.js";
@@ -19,8 +21,8 @@ const element = {
 };
 
 
-const snakeGame = new SnakeGame( document.querySelector(".viewer") );
-
+const snakeGame = new SnakeGame( document.getElementById("viewer") );
+snakeGame.minimap( document.querySelector("#minimap > .viewer") );
 
 
 snakeGame.setUnitTileSize( new SnakeGame.Vector( 100, 100 ) );
@@ -36,7 +38,9 @@ element.startButton.addEventListener("click", () => {
 });
 
 snakeGame.on("gameover", () => {
-   // alert(123);
+
+
+
 });
 
 window.snakeGame = snakeGame;
