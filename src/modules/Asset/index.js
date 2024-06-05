@@ -35,7 +35,7 @@ export class Asset {
 
     clone() {
 
-        const clone = new Asset();
+        const clone = new this.constructor();
         clone.setDirection( this.direction );
         clone.getPosition().copy( this.getPosition() );
         return clone;

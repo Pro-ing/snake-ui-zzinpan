@@ -2,12 +2,15 @@ import {Vector} from "./modules/Vector.js";
 import * as Direction from "./modules/Direction.js";
 import {Asset} from "./modules/Asset";
 import {EventManager} from "./modules/EventManager.js";
+import {SnakeHead} from "./modules/Asset/SnakeHead.js";
+import {SnakeBody} from "./modules/Asset/SnakeBody.js";
 
 export class SnakeEngine {
 
     static Vector = Vector;
     static Direction = Direction;
     static EventManager = EventManager;
+    static Asset = Asset;
 
     world = {
         size: new Vector(11, 11),
@@ -15,15 +18,10 @@ export class SnakeEngine {
     }
 
     snake = {
-        // 꼬리[0] ... 머리[bodies.length - 1]
-        bodies: [],
+        head: null,
         // pxPerMilliSeconds
         speed: 0.00001
     };
-
-    feeds = [];
-    enemies = [];
-
 
     eventManager = new EventManager();
 
@@ -43,29 +41,40 @@ export class SnakeEngine {
         const startX = Math.floor( this.world.size.getX() / 2 );
         const startY = Math.floor( this.world.size.getY() / 2 );
 
-        const snakeHead = new Asset();
+        const snakeHead = new SnakeHead();
         snakeHead.setDirection( Direction.BOTTOM );
         snakeHead.getPosition().set(startX, startY);
 
-        this.snake.bodies = [
-            snakeHead
-        ];
-
-        this.feeds = [];
-        this.enemies = [];
+        this.snake.head = snakeHead;
 
         this.world.assets = [ snakeHead ];
 
     }
 
-    getSnake() {
+    getSnakeHead() {
 
-        return this.snake.bodies.slice();
+        return this.snake.head;
 
     }
 
     getAssets() {
         return this.world.assets.slice();
+    }
+
+    getEmptyPosition() {
+        const assets = this.getAssets();
+        while(true) {
+            const x = Math.floor( Math.random() * this.world.size.getX() );
+            const y= Math.floor( Math.random() * this.world.size.getY() );
+            const isEmpty = assets.every(( asset ) => {
+                const position = asset.getPosition();
+                return position.getX() !== x && position.getY() !== y;
+            });
+
+            if( isEmpty ){
+                return new Vector( x, y );
+            }
+        }
     }
 
     start() {
@@ -88,8 +97,7 @@ export class SnakeEngine {
             }
 
             const movePx = px - remainder;
-            const snakeBodies = this.getSnake();
-            const head = snakeBodies[ snakeBodies.length - 1 ];
+            const head = this.getSnakeHead();
             const nextHeadPosition = head.getPosition().clone();
             nextHeadPosition.add( head.getDirection() );
             nextHeadPosition.multiplyScalar( movePx );
@@ -102,37 +110,34 @@ export class SnakeEngine {
 
             const asset = this.getByPosition( nextHeadPosition );
 
-            // asset === 빈 공간 : 이동
-            if( !asset ){
+            // asset === 빈 공간 : 이동 - start
+            let lastBody = head;
+            while(true){
+                const nextBody = lastBody.getNext()
 
-                snakeBodies.forEach(( body, index ) => {
+                if(!nextBody) {
+                    break;
+                }
 
-                    if( index === snakeBodies.length - 1 ) {
-                        body.position.copy( nextHeadPosition );
-                        return;
-                    }
-
-                    const nextBody = snakeBodies[ index + 1 ];
-                    body.position.copy( nextBody.position );
-
-                });
-
-                this.eventManager.dispatch( "update" );
-                this.raf.time = now;
-                this.raf.id = requestAnimationFrame(frame);
-                return;
+                lastBody = nextBody;
             }
 
-            if( this.isFeed( asset ) ){
-                console.log("asset is feed");
-                this.eventManager.dispatch( "update" );
-                this.raf.time = now;
-                this.raf.id = requestAnimationFrame(frame);
-                return;
+            let prevBody = lastBody.getPrev();
+            while(prevBody){
+
+                const nextBody = prevBody.getNext();
+                nextBody.getPosition().copy( prevBody.getPosition() );
+                nextBody.setDirection( prevBody.getDirection() );
+                prevBody = prevBody.getPrev();
+
+            }
+            head.getPosition().add( head.getDirection() );
+
+            // 이동 - end
+            if( asset ){
+                this.eventManager.dispatch( "meetAsset", asset );
             }
 
-            // this.isEnemy( asset ) || this.isSnake( asset )
-            console.log("asset is enemy or snake");
             this.eventManager.dispatch( "update" );
             this.raf.time = now;
             this.raf.id = requestAnimationFrame(frame);
@@ -167,21 +172,9 @@ export class SnakeEngine {
 
     }
 
-    isEnemy( asset ) {
-
-        return -1 < this.enemies.indexOf( asset );
-
-    }
-
     isSnake( asset ) {
 
-        return -1 < this.snake.bodies.indexOf( asset );
-
-    }
-
-    isFeed( asset ) {
-
-        return -1 < this.feeds.indexOf( asset );
+        return asset instanceof SnakeBody;
 
     }
 
@@ -200,8 +193,7 @@ export class SnakeEngine {
             return;
         }
 
-        const snakeBodies = this.getSnake();
-        const head = snakeBodies[ snakeBodies.length - 1 ];
+        const head = this.getSnakeHead();
 
         // 현재
         if( head.direction.clone().negate().equals( direction ) ){
@@ -242,12 +234,42 @@ export class SnakeEngine {
 
     }
 
-    getFeeds() {
+    addAsset( asset ) {
 
-        return {
-            direction: SnakeEngine.Direction.BOTTOM,
-            position: { x: 2, y: 2 }
-        };
+        this.world.assets.push( asset );
+        this.eventManager.dispatch( "update" );
+
+    }
+
+    removeAsset( asset ) {
+
+        const index = this.world.assets.indexOf( asset );
+        if( index < 0 ) {
+            return;
+        }
+        this.world.assets.splice( index, 1 );
+
+    }
+
+    addSnakeBody() {
+
+        let lastBody = this.getSnakeHead();
+        while(true){
+
+            const nextBody = lastBody.getNext();
+            if( !nextBody ){
+                break;
+            }
+
+            lastBody = nextBody;
+
+        }
+
+        const newLastBody = new SnakeBody();
+        newLastBody.setDirection( lastBody.getDirection() );
+        newLastBody.getPosition().copy( lastBody.getPosition() );
+        lastBody.setNext( newLastBody );
+        newLastBody.setPrev( lastBody );
 
     }
 

@@ -9,6 +9,13 @@ const directions = [
     TOP, RIGHT, BOTTOM, LEFT
 ];
 
+export const random = () => {
+
+    const index = Math.floor( Math.random() * 4 );
+    return directions[ index ];
+
+};
+
 export const hasValue = ( value ) => {
 
     return -1 < directions.indexOf( value );

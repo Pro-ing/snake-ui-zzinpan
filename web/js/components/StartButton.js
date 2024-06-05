@@ -12,9 +12,9 @@ style.innerHTML = `
     background-color: transparent;
     padding: 4px 10px;
     z-index: 10;
-    transition: font-size 500ms, color 500ms, top 500ms, opacity 500ms, text-shadow 500ms;
     text-shadow: white 1px 0 10px;
     color: #644724;
+    transition: font-size 500ms, color 500ms, top 500ms, opacity 500ms, text-shadow 500ms;
     opacity: 0;
     pointer-events: none;
 }
@@ -38,14 +38,6 @@ class StartButton extends HTMLElement {
 
     constructor() {
         super();
-
-        if( !document.head.querySelector(".component-start-button") ){
-            document.head.appendChild( style );
-        }
-
-        this.classList.add("start-button");
-        this.classList.add("show");
-        this.innerText = "START";
     }
 
     static get observedAttributes() {
@@ -53,7 +45,6 @@ class StartButton extends HTMLElement {
     }
 
     attributeChangedCallback() {
-        console.log(123);
         if(this.getAttribute('visible') === "true"){
             this.classList.add( "show" );
             return;
@@ -63,7 +54,13 @@ class StartButton extends HTMLElement {
     }
 
     connectedCallback() {
+        if( !document.head.querySelector(".component-start-button") ){
+            document.head.appendChild( style );
+        }
 
+        this.classList.add("start-button");
+        this.classList.add("show");
+        this.innerText = "START";
     }
 
 }

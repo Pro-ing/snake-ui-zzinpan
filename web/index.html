@@ -7,18 +7,24 @@
 </head>
 <body>
 <div id="viewer" class="viewer"></div>
-<start-button id="startButton" visible="true"></start-button>
 <div id="minimap" class="minimap">
     <div class="viewer"></div>
 </div>
 <script src="https://unpkg.com/konva@9/konva.min.js"></script>
 <script type="module">
 import "./js/components/StartButton.js";
+import "./js/components/GameoverInformation.js";
 import {SnakeGame} from "./js";
 
 const element = {
-  startButton: document.getElementById("startButton")
+    startButton: document.createElement("start-button"),
+    gameoverInformation: document.createElement("gameover-information")
 };
+element.startButton.setAttribute("visible", "true");
+document.body.appendChild(element.startButton);
+
+element.gameoverInformation.setAttribute("visible", "false");
+document.body.appendChild(element.gameoverInformation);
 
 
 const snakeGame = new SnakeGame( document.getElementById("viewer") );
@@ -39,7 +45,15 @@ element.startButton.addEventListener("click", () => {
 
 snakeGame.on("gameover", () => {
 
+    element.gameoverInformation.setAttribute("visible", "true");
 
+});
+
+element.gameoverInformation.addEventListener("clickRetryButton", () => {
+
+    console.log(44);
+    element.gameoverInformation.setAttribute("visible", "false");
+    snakeGame.start();
 
 });
 

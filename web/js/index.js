@@ -76,6 +76,7 @@ export class SnakeGame {
 
     engine;
     updateCounts = 0;
+    playing = false;
 
     konva = {
         stage: null,
@@ -84,6 +85,10 @@ export class SnakeGame {
             snake: []
         }
     }
+
+    intervalId = {
+        feed: null
+    };
 
     constructor( containerHtmlElement ) {
 
@@ -134,11 +139,91 @@ export class SnakeGame {
         this.htmlElement.minimap.canvas = document.createElement("canvas");
         this.htmlElement.minimap.canvasContext = this.htmlElement.minimap.canvas.getContext("2d");
 
+        // this.mapSize = new SnakeEngine.Vector(30, 30);
         this.mapSize = new SnakeEngine.Vector(30, 30);
         this.engine = new SnakeEngine( this.mapSize );
         this.eventManager = new SnakeEngine.EventManager();
 
         this.initWorld();
+        this.initEvent();
+
+    }
+
+    initEvent() {
+
+        this.engine.on("update", () => {
+
+            this.render();
+
+        });
+
+        this.engine.on("meetAsset", (asset) => {
+
+            if( asset.getData().type === "feed" ){
+                this.engine.removeAsset( asset );
+                this.engine.addSnakeBody();
+                this.render();
+            }
+
+        });
+
+        this.engine.on("gameover", () => {
+
+            this.playing = false;
+
+            utility.duration(( rate ) => {
+
+                const frameIndex = Math.round( 29 * rate );
+                let body = this.engine.getSnakeHead();
+                let index = 0;
+                while( body ) {
+
+                    const direction = body.getDirection();
+                    this.konva.objects.snake[ index ].setImage( this.sprites.snake.die.get( direction )[ frameIndex ] );
+                    body = body.getNext();
+                    index += 1;
+                }
+
+            }, 1000);
+
+            this.eventManager.dispatch("gameover");
+
+        });
+
+        window.addEventListener("keydown", ( event ) => {
+
+            if(!this.playing){
+                return;
+            }
+
+            console.log(event.key);
+
+
+
+            if(event.key === "ArrowLeft"){
+                this.engine.left();
+                this.render();
+                return;
+            }
+
+            if(event.key === "ArrowUp"){
+                this.engine.top();
+                this.render();
+                return;
+            }
+
+            if(event.key === "ArrowRight"){
+                this.engine.right();
+                this.render();
+                return;
+            }
+
+            if(event.key === "ArrowDown"){
+                this.engine.bottom();
+                this.render();
+            }
+
+        });
 
     }
 
@@ -312,15 +397,17 @@ export class SnakeGame {
 
         const unitTileSizeX = this.unitTileSize.getX();
         const unitTileSizeY = this.unitTileSize.getY();
-        const snake = this.engine.getSnake();
-        snake.forEach(( snakeBody, index ) => {
+        const snakeHead = this.engine.getSnakeHead();
+        let bodyCount = 0;
+        let snakeBody = snakeHead;
+        while(snakeBody){
 
             const position = snakeBody.getPosition();
             const direction = snakeBody.getDirection();
 
             const walkSprites = this.sprites.snake.walk.get( direction );
-            const walkSprite = walkSprites[ ( this.updateCounts + index ) % 2 ];
-            const konvaObject = this.konva.objects.snake[ index ];
+            const walkSprite = walkSprites[ ( this.updateCounts + bodyCount ) % 2 ];
+            const konvaObject = this.konva.objects.snake[ bodyCount ];
             const x= position.getX() * unitTileSizeX;
             const y= position.getY() * unitTileSizeY;
             if( !konvaObject ){
@@ -334,17 +421,21 @@ export class SnakeGame {
                 this.konva.layer.add( konvaObject );
                 this.konva.objects.snake.push( konvaObject );
                 konvaObject.show();
-                return;
+                snakeBody = snakeBody.getNext();
+                bodyCount += 1;
+                continue;
             }
 
             konvaObject.setImage( walkSprite );
             konvaObject.x( x );
             konvaObject.y( y );
             konvaObject.show();
+            snakeBody = snakeBody.getNext();
+            bodyCount += 1;
 
-        });
+        }
 
-        const snakeHeadPosition = snake[0].getPosition();
+        const snakeHeadPosition = snakeHead.getPosition();
         this.konva.stage.position({
             x: this.konva.stage.width() /2 -snakeHeadPosition.getX() * unitTileSizeX,
             y: this.konva.stage.height()/2 -snakeHeadPosition.getY() * unitTileSizeY
@@ -364,83 +455,45 @@ export class SnakeGame {
         const unitTileX = this.htmlElement.minimap.canvas.width / this.mapSize.getX();
         const unitTileY = this.htmlElement.minimap.canvas.height / this.mapSize.getY();
 
-        console.log(snakeHeadPosition);
-        snake.forEach(( snakeBody ) => {
+        this.engine.getAssets().forEach(( asset ) => {
 
-            const snakeX = snakeBody.getPosition().getX();
-            const snakeY = snakeBody.getPosition().getY();
-            this.htmlElement.minimap.canvasContext.fillRect( snakeX * unitTileX, snakeY * unitTileY, unitTileX, unitTileY );
+            const assetX = asset.getPosition().getX();
+            const assetY = asset.getPosition().getY();
+
+            let fillStyle = "#000000";
+            if( this.engine.isSnake( asset ) ){
+                fillStyle = "#00ff00";
+            }
+
+            this.htmlElement.minimap.canvasContext.fillStyle = fillStyle;
+            this.htmlElement.minimap.canvasContext.fillRect( assetX * unitTileX, assetY * unitTileY, unitTileX, unitTileY );
 
         });
+
     }
 
     start() {
 
         this.updateCounts = 0;
         // this.engine.snake.speed = 0.0001;
-        this.engine.snake.speed = 0.001
+        this.engine.snake.speed = 0.001;
 
         this.konva.objects.snake.forEach(( snakeBody ) => {
             snakeBody.hide();
         });
 
-        this.engine.on("update", () => {
+        this.intervalId.feed = setInterval(() => {
 
-            this.render();
+            const emptyPosition = this.engine.getEmptyPosition();
+            const asset = new SnakeEngine.Asset();
+            asset.getPosition().copy( emptyPosition );
+            asset.setDirection( SnakeEngine.Direction.random() );
+            asset.getData().type = "feed";
+            this.engine.addAsset( asset );
 
-        });
+        }, 3000);
 
-        this.engine.on("gameover", () => {
-
-
-            utility.duration(( rate ) => {
-
-                const frameIndex = Math.round( 29 * rate );
-
-                this.engine.getSnake().forEach(( snakeBody, index ) => {
-
-                    const direction = snakeBody.getDirection();
-                    this.konva.objects.snake[ index ].setImage( this.sprites.snake.die.get( direction )[ frameIndex ] );
-
-                });
-
-            }, 1000);
-
-            this.eventManager.dispatch("gameover");
-
-        });
-
-        window.addEventListener("keydown", ( event ) => {
-
-            console.log(event.key);
-
-
-
-            if(event.key === "ArrowLeft"){
-                this.engine.left();
-                this.render();
-                return;
-            }
-
-            if(event.key === "ArrowUp"){
-                this.engine.top();
-                this.render();
-                return;
-            }
-
-            if(event.key === "ArrowRight"){
-                this.engine.right();
-                this.render();
-                return;
-            }
-
-            if(event.key === "ArrowDown"){
-                this.engine.bottom();
-                this.render();
-            }
-
-        });
-
+        this.playing = true;
         this.engine.start();
 
     }
