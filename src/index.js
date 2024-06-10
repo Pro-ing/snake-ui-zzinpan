@@ -103,8 +103,7 @@ export class SnakeEngine {
             nextHeadPosition.multiplyScalar( movePx );
 
             if( this.isOutOfWorld( nextHeadPosition ) ){
-                cancelAnimationFrame( this.raf.id );
-                this.eventManager.dispatch( "gameover" );
+                this.gameover();
                 return;
             }
 
@@ -113,7 +112,7 @@ export class SnakeEngine {
             // asset === 빈 공간 : 이동 - start
             let lastBody = head;
             while(true){
-                const nextBody = lastBody.getNext()
+                const nextBody = lastBody.getNext();
 
                 if(!nextBody) {
                     break;
@@ -136,6 +135,9 @@ export class SnakeEngine {
             // 이동 - end
             if( asset ){
                 this.eventManager.dispatch( "meetAsset", asset );
+                if( !this.raf.id ){
+                    return;
+                }
             }
 
             this.eventManager.dispatch( "update" );
@@ -270,7 +272,14 @@ export class SnakeEngine {
         newLastBody.getPosition().copy( lastBody.getPosition() );
         lastBody.setNext( newLastBody );
         newLastBody.setPrev( lastBody );
+        this.world.assets.push( newLastBody );
 
+    }
+
+    gameover() {
+        cancelAnimationFrame( this.raf.id );
+        this.raf.id = null;
+        this.eventManager.dispatch( "gameover" );
     }
 
 }

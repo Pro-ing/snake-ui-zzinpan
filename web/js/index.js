@@ -50,7 +50,7 @@ export class SnakeGame {
         snake: {
             walk: new Map(),
             die: new Map(),
-            attack: new Map()
+            idle: new Map()
         },
         map: {
             ground: new Sprite("../web/img/map/ground.png"),
@@ -82,7 +82,8 @@ export class SnakeGame {
         stage: null,
         layer: null,
         objects: {
-            snake: []
+            snake: [],
+            feed: [],
         }
     }
 
@@ -119,7 +120,8 @@ export class SnakeGame {
 
             [
                 { name: "walk", frameCount: 2 },
-                { name: "die", frameCount: 30 }
+                { name: "die", frameCount: 30 },
+                { name: "idle", frameCount: 1 },
             ].forEach(( animation ) => {
 
                 const sprites = [];
@@ -163,15 +165,21 @@ export class SnakeGame {
                 this.engine.removeAsset( asset );
                 this.engine.addSnakeBody();
                 this.render();
+                return;
+            }
+
+            if( this.engine.isSnake( asset ) ){
+                this.engine.gameover();
             }
 
         });
 
-        this.engine.on("gameover", () => {
+        this.engine.on("gameover", async () => {
 
             this.playing = false;
+            clearInterval( this.intervalId.feed );
 
-            utility.duration(( rate ) => {
+            await utility.duration(( rate ) => {
 
                 const frameIndex = Math.round( 29 * rate );
                 let body = this.engine.getSnakeHead();
@@ -440,6 +448,45 @@ export class SnakeGame {
             x: this.konva.stage.width() /2 -snakeHeadPosition.getX() * unitTileSizeX,
             y: this.konva.stage.height()/2 -snakeHeadPosition.getY() * unitTileSizeY
         });
+
+        const assets = this.engine.getAssets();
+        let feedCount = 0;
+        assets.forEach(( asset ) => {
+
+            if( asset.getData().type !== "feed" ){
+                return;
+            }
+            console.log("zz");
+
+            const image = this.sprites.snake.idle.get( asset.getDirection() )[ 0 ];
+            console.log(image.src);
+            const position = asset.getPosition();
+            const x = position.getX() * unitTileSizeX;
+            const y = position.getY() * unitTileSizeY;
+            const konvaObject = this.konva.objects.feed[ feedCount ];
+            if( !konvaObject ){
+                const konvaObject = new Konva.Image({
+                    x,
+                    y,
+                    image,
+                    width: unitTileSizeX,
+                    height: unitTileSizeY,
+                });
+                this.konva.layer.add( konvaObject );
+                this.konva.objects.feed.push( konvaObject );
+                konvaObject.show();
+                feedCount += 1;
+                return;
+            }
+
+            konvaObject.setImage( image );
+            konvaObject.x( x );
+            konvaObject.y( y );
+            konvaObject.show();
+            feedCount += 1;
+
+        });
+
         this.konva.stage.batchDraw();
 
 
@@ -455,7 +502,7 @@ export class SnakeGame {
         const unitTileX = this.htmlElement.minimap.canvas.width / this.mapSize.getX();
         const unitTileY = this.htmlElement.minimap.canvas.height / this.mapSize.getY();
 
-        this.engine.getAssets().forEach(( asset ) => {
+        assets.forEach(( asset ) => {
 
             const assetX = asset.getPosition().getX();
             const assetY = asset.getPosition().getY();
@@ -488,7 +535,8 @@ export class SnakeGame {
             const asset = new SnakeEngine.Asset();
             asset.getPosition().copy( emptyPosition );
             asset.setDirection( SnakeEngine.Direction.random() );
-            asset.getData().type = "feed";
+            const data = asset.getData();
+            data.type = "feed";
             this.engine.addAsset( asset );
 
         }, 3000);

@@ -1,21 +1,26 @@
 export const duration = ( frameUpdateCallback, milliseconds ) => {
 
-    const startTime = Date.now();
-    let rafId = null;
+    return new Promise(( resolve ) => {
 
-    const frame = () => {
+        const startTime = Date.now();
+        let rafId = null;
 
-        const elapsedTime = Date.now() - startTime;
-        if( milliseconds <= elapsedTime ){
-            frameUpdateCallback( 1 );
-            cancelAnimationFrame( rafId );
-            return;
-        }
+        const frame = () => {
 
-        frameUpdateCallback( elapsedTime / milliseconds );
-        rafId = requestAnimationFrame( frame );
+            const elapsedTime = Date.now() - startTime;
+            if( milliseconds <= elapsedTime ){
+                frameUpdateCallback( 1 );
+                cancelAnimationFrame( rafId );
+                resolve();
+                return;
+            }
 
-    };
-    frame();
+            frameUpdateCallback( elapsedTime / milliseconds );
+            rafId = requestAnimationFrame( frame );
+
+        };
+        frame();
+
+    });
 
 };

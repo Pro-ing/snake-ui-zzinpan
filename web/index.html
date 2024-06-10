@@ -12,16 +12,16 @@
 </div>
 <script src="https://unpkg.com/konva@9/konva.min.js"></script>
 <script type="module">
-import "./js/components/StartButton.js";
+import "./js/components/StartPage.js";
 import "./js/components/GameoverInformation.js";
 import {SnakeGame} from "./js";
 
 const element = {
-    startButton: document.createElement("start-button"),
+    startPage: document.createElement("start-page"),
     gameoverInformation: document.createElement("gameover-information")
 };
-element.startButton.setAttribute("visible", "true");
-document.body.appendChild(element.startButton);
+element.startPage.setAttribute("visible", "true");
+document.body.appendChild(element.startPage);
 
 element.gameoverInformation.setAttribute("visible", "false");
 document.body.appendChild(element.gameoverInformation);
@@ -36,9 +36,9 @@ window.addEventListener("resize", () => {
    snakeGame.resize();
 });
 
-element.startButton.addEventListener("click", () => {
+element.startPage.addEventListener("clickStartButton", () => {
 
-    element.startButton.setAttribute("visible", "false");
+    element.startPage.setAttribute("visible", "false");
     snakeGame.start();
 
 });
