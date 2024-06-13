@@ -13,18 +13,18 @@
 <script src="https://unpkg.com/konva@9/konva.min.js"></script>
 <script type="module">
 import "./js/components/StartPage.js";
-import "./js/components/GameoverInformation.js";
+import "./js/components/GameoverPage.js";
 import {SnakeGame} from "./js";
 
 const element = {
     startPage: document.createElement("start-page"),
-    gameoverInformation: document.createElement("gameover-information")
+    gameoverPage: document.createElement("gameover-page")
 };
 element.startPage.setAttribute("visible", "true");
 document.body.appendChild(element.startPage);
 
-element.gameoverInformation.setAttribute("visible", "false");
-document.body.appendChild(element.gameoverInformation);
+element.gameoverPage.setAttribute("visible", "false");
+document.body.appendChild(element.gameoverPage);
 
 
 const snakeGame = new SnakeGame( document.getElementById("viewer") );
@@ -45,14 +45,14 @@ element.startPage.addEventListener("clickStartButton", () => {
 
 snakeGame.on("gameover", () => {
 
-    element.gameoverInformation.setAttribute("visible", "true");
+    element.gameoverPage.setAttribute("visible", "true");
 
 });
 
-element.gameoverInformation.addEventListener("clickRetryButton", () => {
+element.gameoverPage.addEventListener("clickRetryButton", () => {
 
     console.log(44);
-    element.gameoverInformation.setAttribute("visible", "false");
+    element.gameoverPage.setAttribute("visible", "false");
     snakeGame.start();
 
 });

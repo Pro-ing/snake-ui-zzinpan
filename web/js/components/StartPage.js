@@ -81,7 +81,7 @@ style.innerHTML = `
     cursor: pointer;
 }
 
-.start-page button:hover {
+.start-page div button:hover {
 transform: scale( 1.2 );
 }
 `;
